@@ -49,7 +49,11 @@ if [ -n "$DIB_LOCAL_IMAGE" ]; then
 else
     DIB_FLAVOR=${DIB_FLAVOR:-GenericCloud}
     if [[ "${DIB_RELEASE}" = 7 ]]; then
-        BASE_IMAGE_FILE=${BASE_IMAGE_FILE:-CentOS-${DIB_RELEASE}-${ARCH}-${DIB_FLAVOR}.qcow2.xz}
+        if [[ "${DIB_FLAVOR}" = "GenericCloud-2009" ]]; then
+            BASE_IMAGE_FILE=${BASE_IMAGE_FILE:-CentOS-${DIB_RELEASE}-${ARCH}-${DIB_FLAVOR}.qcow2}
+        else
+            BASE_IMAGE_FILE=${BASE_IMAGE_FILE:-CentOS-${DIB_RELEASE}-${ARCH}-${DIB_FLAVOR}.qcow2.xz}
+        fi
     else
         BASE_IMAGE_FILE=${BASE_IMAGE_FILE:-$(curl -s https://cloud.centos.org/centos/${DIB_RELEASE}/${ARCH}/images/ | grep -o "CentOS-.[^>]*${DIB_FLAVOR}-.[^>]*.qcow2" | sort -r | head -1)}
     fi
