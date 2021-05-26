@@ -13,6 +13,7 @@
 # under the License.
 
 import logging
+import os
 import uuid
 
 from diskimage_builder.block_device.exception \
@@ -108,10 +109,33 @@ class FilesystemNode(NodeBase):
         if self.opts:
             cmd.extend(self.opts)
 
+        #POOJA:
+        device = self.state['blockdev'][self.base]['device']
+
         if self.type in ('vfat', 'fat'):
             cmd.extend(["-n", self.label])
         else:
             cmd.extend(["-L", self.label])
+            #POOJA:
+            if self.label == 'cloudimg-rootfs':
+                exec_sudo(["echo", "-n", "temp-pass", ">", "/etc/keyfile"])
+                exec_sudo(["cryptsetup", "--key-file", "/etc/keyfile", "-q", "luksFormat", "--type", "luks2", device])
+                exec_sudo(["cryptsetup", "--key-file", "/etc/keyfile", "open", "--type", "luks2", device, "luks-rootfs"])
+
+                crypto_uuid = exec_sudo(["blkid", "-o", "value", "-s", "UUID", device])
+                logger.info("CRYPTO UUID: %s", crypto_uuid)
+                device = "/dev/mapper/luks-rootfs"
+
+                crypttab = os.path.join("/etc", "crypttab")
+                tab_entry_str = "luks-rootfs UUID=" + crypto_uuid.strip() + " /etc/keyfile luks,discard"
+                with open(crypttab, "wt") as ctab_fd:
+                    ctab_fd.write("%s\n" % tab_entry_str)
+                import time; time.sleep(60)
+
+                #target_etc_dir = os.path.join(${TMP_BUILD_DIR}, 'built', 'etc')
+                #exec_sudo(['mkdir', '-p', target_etc_dir])
+                #exec_sudo(['cp', crypttab, os.path.join(target_etc_dir, "crypttab")])
+
 
         if self.type in ('ext2', 'ext3', 'ext4'):
             cmd.extend(['-U', self.uuid])
@@ -126,7 +150,8 @@ class FilesystemNode(NodeBase):
 
         if 'blockdev' not in self.state:
             self.state['blockdev'] = {}
-        device = self.state['blockdev'][self.base]['device']
+
+        ##device = self.state['blockdev'][self.base]['device']
         cmd.append(device)
 
         logger.debug("Creating fs command [%s]", cmd)

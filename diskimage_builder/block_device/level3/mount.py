@@ -106,12 +106,16 @@ class MountPointNode(NodeBase):
         # this behaviour.
         # https://lists.gnu.org/archive/html/qemu-devel/2014-03/msg02978.html
         exec_sudo(["sync"])
-        if self.state['filesys'][self.base]['fstype'] != 'vfat':
+        # POOJA:
+        if self.state['filesys'][self.base]['fstype'] != 'vfat' and self.name != 'mount_mkfs_root':
             exec_sudo(["fstrim", "--verbose",
                        self.state['mount'][self.mount_point]['path']])
         exec_sudo(["umount", self.state['mount'][self.mount_point]['path']])
+        if self.name == 'mount_mkfs_root':
+            exec_sudo(["cryptsetup", "close", "/dev/mapper/luks-rootfs"])
 
     def delete(self):
+        logger.info("Called delete for [%s]", self.name)
         self.umount()
 
 

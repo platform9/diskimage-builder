@@ -75,6 +75,7 @@ def main():
         cmdline = ['dracut', '--list-modules']
         cmdline += [ramdisk_path, kernel_version]
         logging.debug("Calling: %s" % cmdline)
+
         subp = subprocess.Popen(cmdline, stdout=subprocess.PIPE)
         out, err = subp.communicate()
         if subp.returncode:
@@ -87,8 +88,13 @@ def main():
         if modules_to_boot:
             modules_to_boot = ' ' .join(modules_to_boot)
             cmdline += ['--add', modules_to_boot]
+        #POOJA:
+        cmdline += ['--install', '/etc/crypttab']
+        cmdline += ['--install', '/etc/keyfile']
+
         cmdline += ['-f', ramdisk_path, kernel_version]
         logging.debug("Calling: %s" % cmdline)
+
         subp = subprocess.Popen(cmdline, stdout=subprocess.PIPE)
         out, err = subp.communicate()
         if subp.returncode:

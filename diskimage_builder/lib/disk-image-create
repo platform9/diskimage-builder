@@ -526,6 +526,10 @@ if [ -z ${IMAGE_BLOCK_DEVICE} ] ; then
     ${DIB_BLOCK_DEVICE} writefstab
 fi
 
+# POOJA:
+echo "COPY /etc/crypttab to dib built directory... CLEANING UP!!!"
+sleep 120
+
 # XXX: needed?
 LOOPDEV=${IMAGE_BLOCK_DEVICE}
 
