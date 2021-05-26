@@ -154,7 +154,7 @@ function install_grub2 {
         $GRUBNAME --modules="part_msdos" $GRUB_OPTS ${DEVICES[boot]} --no-nvram
     else
         # This set of modules is sufficient for all installs (mbr/gpt/efi)
-        modules="part_msdos part_gpt lvm"
+        modules="part_msdos part_gpt lvm crypto" #POOJA
         if [[ ${DIB_BLOCK_DEVICE} == "mbr" || ${DIB_BLOCK_DEVICE} == "gpt" ]]; then
             $GRUBNAME --modules="$modules biosdisk" $GRUB_OPTS $BOOT_DEV
         elif [[ ${DIB_BLOCK_DEVICE} == "efi" ]]; then
@@ -164,7 +164,10 @@ function install_grub2 {
                 "x86_64"|"amd64")
                     # This call installs grub for BIOS compatability
                     # which makes portable EFI/BIOS images.
-                    $GRUBNAME --modules="$modules" --target=i386-pc $BOOT_DEV
+                    # POOJA:
+                    ###$GRUBNAME --modules="$modules" --target=i386-pc $BOOT_DEV
+                    $GRUBNAME --modules="$modules" --target=x86_64-efi --boot-directory=/boot --efi-directory=/boot/efi $BOOT_DEV
+
                     # Set the x86_64 specific efi target for the generic
                     # installation below.
                     GRUB_OPTS="--target=x86_64-efi"
@@ -200,6 +203,9 @@ function install_grub2 {
     echo "GRUB_TIMEOUT=${DIB_GRUB_TIMEOUT:-5}" >>/etc/default/grub
     echo 'GRUB_TERMINAL="serial console"' >>/etc/default/grub
     echo 'GRUB_GFXPAYLOAD_LINUX=auto' >>/etc/default/grub
+    #POOJA:
+    #echo 'GRUB_ENABLE_CRYPTODISK=y' >>/etc/default/grub
+    echo 'GRUB_PRELOAD_MODULES="cryptodisk luks gcry_rijndael gcry_sha256"' >>/etc/default/grub
 
     # NOTE(ianw) : 2021-05-11
     # On Fedora there has been a switch to BLS
@@ -284,7 +290,14 @@ function install_grub2 {
     # the 16 suffix is added to linux/initrd entries, but we need it to be
     # linuxefi/initrdefi for the image to boot under efi
     if [[ ${DIB_BLOCK_DEVICE} == "efi" ]]; then
-        sed -i 's%\(linux\|initrd\)16 /boot%\1efi /boot%g' $GRUB_CFG
+        #POOJA:
+        #sed -i 's%\(linux\|initrd\)16 /boot%\1efi /boot%g' $GRUB_CFG
+        sed -i 's%\(linux\|initrd\)16 /%\1efi /%g' $GRUB_CFG
+
+        # POOJA:
+        echo "Ran grub2-mkconfig... Replace CRYPTO_UUID in /tmp/dib_build.xyz/mnt/boot/grub2/grub.cfg"
+        echo "Also copy /etc/keyfile to /tmp/dib_build.xyz/mnt/etc"
+        sleep 120
 
         # Finally copy the grub.cfg to the EFI specific dir to support
         # functionality like secure boot. We make a copy because
