@@ -119,8 +119,8 @@ class FilesystemNode(NodeBase):
             #POOJA:
             if self.label == 'cloudimg-rootfs':
                 exec_sudo(["echo", "-n", "temp-pass", ">", "/etc/keyfile"])
-                exec_sudo(["cryptsetup", "--key-file", "/etc/keyfile", "-q", "luksFormat", "--type", "luks2", device])
-                exec_sudo(["cryptsetup", "--key-file", "/etc/keyfile", "open", "--type", "luks2", device, "luks-rootfs"])
+                exec_sudo(["cryptsetup", "--key-file", "/etc/keyfile", "-q", "luksFormat", "--type", "luks1", device])
+                exec_sudo(["cryptsetup", "--key-file", "/etc/keyfile", "open", "--type", "luks1", device, "luks-rootfs"])
 
                 crypto_uuid = exec_sudo(["blkid", "-o", "value", "-s", "UUID", device])
                 logger.info("CRYPTO UUID: %s", crypto_uuid)
