@@ -1,0 +1,61 @@
+Steps to generate a qcow2 image for baremetal using EFI boot:
+
+declare -x DIB_ARGS="vm centos epel dhcp-all-interfaces openssh-server cloud-init cloud-init-datasources devuser stable-interface-names bootloader growroot disable-selinux block-device-efi dracut-regenerate --min-tmpfs 24 -o efi-centos-7.9-grub-luks2-final"
+declare -x DIB_BLOCK_DEVICE="efi"
+declare -x DIB_BOOTLOADER_DEFAULT_CMDLINE="rd.luks.uuid=CRYPTO_UUID rd.luks.name=CRYPTO_UUID=luks-rootfs"
+declare -x DIB_CLOUD_INIT_DATASOURCES="ConfigDrive, OpenStack"
+declare -x DIB_DEBUG_TRACE="10"
+declare -x DIB_DEV_USER_PASSWORD="devuser"
+declare -x DIB_DEV_USER_PWDLESS_SUDO="Yes"
+declare -x DIB_DEV_USER_USERNAME="devuser"
+declare -x DIB_FLAVOR="GenericCloud-2009"
+declare -x DIB_PYTHON_EXEC="/root/diskimage-builder/dib-venv/bin/python3"
+declare -x DIB_RELEASE="7"
+declare -x DIB_BLOCK_DEVICE_CONFIG=`cat partitions.yaml`
+
+disk-image-create $DIB_ARGS -o efi-centos7.qcow2
+
+(During image creation, just sed replace the CRYPTO_UUID from lsblk output in the grub2 config as indicated during the run.)
+
+Partitions.yaml file using GPT for UEFI boot:
+
+- local_loop:
+    name: image0
+    size: 10GiB
+- partitioning:
+    base: image0
+    label: gpt
+    partitions:
+      - name: ESP
+        type: 'EF00'
+        size: 550MiB
+        mkfs:
+          type: vfat
+          mount:
+            mount_point: /boot/efi
+            fstab:
+              options: "defaults"
+              fsck-passno: 1
+      - name: BSP
+        type: 'EF02'
+        size: 8MiB
+      - name: boot
+        type: '8300'
+        size: 550MiB
+        mkfs:
+          type: ext4
+          mount:
+            mount_point: /boot
+            fstab:
+              options: "defaults"
+              fsck-passno: 1
+      - name: root
+        type: '8300'
+        size: 99%
+        mkfs:
+          type: ext4
+          mount:
+            mount_point: /
+            fstab:
+              options: "defaults"
+              fsck-passno: 1
